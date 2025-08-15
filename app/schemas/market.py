@@ -5,6 +5,7 @@ from decimal import Decimal
 class TokenSparkline(BaseModel):
     price: List[float] = Field(default_factory=list)
 
+
 class TokenResponse(BaseModel):
     id: str
     symbol: str
@@ -24,6 +25,8 @@ class TokenResponse(BaseModel):
     total_supply: Optional[float] = None
     max_supply: Optional[float] = None
     is_favorite: bool = False
+
+
 
 class HalalStatus(BaseModel):
     is_halal: Optional[bool] = None  
@@ -72,6 +75,8 @@ class TokenAdditionalInfo(BaseModel):
     exchanges: List[str] = Field(default_factory=list)
     security_audits: List[str] = Field(default_factory=list)
     related_people: List[str] = Field(default_factory=list)
+    related_wallets: List[str] = Field(default_factory=list, description="ID связанных кошельков")
+    related_conductors: List[str] = Field(default_factory=list, description="ID связанных проводников")
     coingecko_id: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -85,6 +90,35 @@ class RelatedPerson(BaseModel):
     description: Optional[str] = Field(None, description="Описание человека")
     position: Optional[str] = Field(None, description="Должность или позиция")
     related_link: Optional[str] = Field(None, description="Ссылка на профиль")
+    category: Optional[str] = Field(None, description="Категория человека")
+
+class RelatedWallet(BaseModel):
+    id: str = Field(..., description="Уникальный идентификатор кошелька")
+    title: str = Field(..., description="Название кошелька")
+    image: Optional[str] = Field(None, description="Изображение кошелька")
+    url: Optional[str] = Field(None, description="URL кошелька")
+    description: Optional[str] = Field(None, description="Описание кошелька")
+    category: Optional[str] = Field(None, description="Категория кошелька")
+    supported_currencies: List[str] = Field(default_factory=list, description="Поддерживаемые валюты")
+    features: List[str] = Field(default_factory=list, description="Особенности кошелька")
+
+class RelatedConductor(BaseModel):
+    id: str = Field(..., description="Уникальный идентификатор проводника")
+    title: str = Field(..., description="Название проводника")
+    image: Optional[str] = Field(None, description="Изображение проводника")
+    url: Optional[str] = Field(None, description="URL проводника")
+    description: Optional[str] = Field(None, description="Описание проводника")
+    category: Optional[str] = Field(None, description="Категория проводника")
+    supported_currencies: List[str] = Field(default_factory=list, description="Поддерживаемые валюты")
+    features: List[str] = Field(default_factory=list, description="Особенности проводника")
+    fees: Optional[str] = Field(None, description="Информация о комиссиях")
+
+class RelatedSecurityAudit(BaseModel):
+    id: str = Field(..., description="Уникальный идентификатор аудита")
+    title: str = Field(..., description="Название аудита")
+    auditor_name: str = Field(..., description="Имя аудитора")
+    link: str = Field(..., description="Ссылка на отчет")
+    audit_score: str = Field(..., description="Оценка аудита")
 
 class TokenDetailResponse(BaseModel):
     id: str
@@ -99,7 +133,14 @@ class TokenDetailResponse(BaseModel):
     is_favorite: bool = False
     social_links: TokenSocialLinks = Field(default_factory=TokenSocialLinks)
     additional_info: TokenAdditionalInfo = Field(default_factory=TokenAdditionalInfo)
+    approved: bool = False  
+    class Config:
+        extra = "allow"
+    
     related_people_data: List[RelatedPerson] = Field(default_factory=list, description="Данные связанных людей")
+    related_wallets_data: List[RelatedWallet] = Field(default_factory=list, description="Данные связанных кошельков")
+    related_conductors_data: List[RelatedConductor] = Field(default_factory=list, description="Данные связанных проводников")
+    related_security_audits_data: List[RelatedSecurityAudit] = Field(default_factory=list, description="Данные аудитов безопасности")
     
     class Config:
         schema_extra = {
@@ -125,16 +166,32 @@ class TokenDetailResponse(BaseModel):
                 },
                 "additional_info": {
                     "description": "Bitcoin is a decentralized digital currency",
-                    "related_people": ["550e8400-e29b-41d4-a716-446655440000"]
+                    "related_people": ["550e8400-e29b-41d4-a716-446655440000"],
+                    "related_wallets": ["550e8400-e29b-41d4-a716-446655440001"],
+                    "related_conductors": ["550e8400-e29b-41d4-a716-446655440002"]
                 },
                 "related_people_data": [
                     {
                         "id": "550e8400-e29b-41d4-a716-446655440000",
                         "full_name": "Сатоши Накамото",
                         "position": "Создатель Bitcoin",
-                        "description": "Псевдонимный создатель Bitcoin",
-                        "avatar_image": "",
-                        "related_link": ""
+                        "description": "Псевдонимный создатель Bitcoin"
+                    }
+                ],
+                "related_wallets_data": [
+                    {
+                        "id": "550e8400-e29b-41d4-a716-446655440001",
+                        "title": "MetaMask",
+                        "image": "https://example.com/metamask.png",
+                        "url": "https://metamask.io"
+                    }
+                ],
+                "related_conductors_data": [
+                    {
+                        "id": "550e8400-e29b-41d4-a716-446655440002",
+                        "title": "Coinbase",
+                        "image": "https://example.com/coinbase.png",
+                        "url": "https://coinbase.com"
                     }
                 ]
             }

@@ -572,6 +572,100 @@ class PlatformSchema:
         }
     ]
 
+
+
+
+class WalletsSchema:
+    table_name = "LiberandumApiWallets"
+    
+    key_schema = [
+        {
+            'AttributeName': 'id',
+            'KeyType': 'HASH'
+        }
+    ]
+    
+    attribute_definitions = [
+        {
+            'AttributeName': 'id',
+            'AttributeType': 'S'
+        },
+        {
+            'AttributeName': 'title',
+            'AttributeType': 'S'
+        }
+    ]
+    
+    provisioned_throughput = {
+        'ReadCapacityUnits': 5,
+        'WriteCapacityUnits': 5
+    }
+    
+    global_secondary_indexes = [
+        {
+            'IndexName': 'title-index',
+            'KeySchema': [
+                {
+                    'AttributeName': 'title',
+                    'KeyType': 'HASH'
+                }
+            ],
+            'Projection': {
+                'ProjectionType': 'ALL'
+            },
+            'ProvisionedThroughput': {
+                'ReadCapacityUnits': 5,
+                'WriteCapacityUnits': 5
+            }
+        }
+    ]
+
+class ConductorsSchema:
+    table_name = "LiberandumApiConductors"
+    
+    key_schema = [
+        {
+            'AttributeName': 'id',
+            'KeyType': 'HASH'
+        }
+    ]
+    
+    attribute_definitions = [
+        {
+            'AttributeName': 'id',
+            'AttributeType': 'S'
+        },
+        {
+            'AttributeName': 'title',
+            'AttributeType': 'S'
+        }
+    ]
+    
+    provisioned_throughput = {
+        'ReadCapacityUnits': 5,
+        'WriteCapacityUnits': 5
+    }
+    
+    global_secondary_indexes = [
+        {
+            'IndexName': 'title-index',
+            'KeySchema': [
+                {
+                'AttributeName': 'title',
+                    'KeyType': 'HASH'
+                }
+            ],
+            'Projection': {
+                'ProjectionType': 'ALL'
+            },
+            'ProvisionedThroughput': {
+                'ReadCapacityUnits': 5,
+                'WriteCapacityUnits': 5
+            }
+        }
+    ]
+
+
 roadmaps_schema = RoadMapsSchema()
 security_audit_schema = SecurityAuditSchema()
 people_schema = PeopleSchema()
@@ -582,3 +676,5 @@ tokens_schema = TokensSchema()
 token_stats_schema = TokenStatsSchema()
 exchanges_schema = ExchangesSchema()
 exchange_stats_schema = ExchangeStatsSchema()
+wallets_schema = WalletsSchema()
+conductors_schema = ConductorsSchema()

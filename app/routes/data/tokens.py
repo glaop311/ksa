@@ -3,7 +3,7 @@ from typing import Optional, List
 from enum import Enum
 
 from app.services.market.market_service import market_service
-from app.schemas.market import TokenListResponse, TokenDetailResponse, TokenFullStatsResponse, RelatedPerson
+from app.schemas.market import RelatedConductor, RelatedSecurityAudit, RelatedWallet, TokenListResponse, TokenDetailResponse, TokenFullStatsResponse, RelatedPerson
 from app.schemas.chart import TokenChartResponse
 from app.services.market.coingecko_service import coingecko_service
 from app.core.database.connector import get_generic_repository
@@ -202,12 +202,14 @@ async def get_token_full_stats(token_id: str):
             detail="Ошибка получения статистики токена"
         )
 
+
 @router.get("/{token_id}", response_model=TokenDetailResponse)
 async def get_token_detail(
     token_id: str,
     lang: Language = Query(default=Language.en, description="Язык отображения"),
     current_user = Depends(get_current_user_optional)
 ):
+    """Получить детальную информацию о токене с обновленными связанными данными"""
     try:
         result = market_service.get_token_detail(token_id, lang.value)
         
@@ -217,14 +219,42 @@ async def get_token_detail(
                 detail="Токен не найден"
             )
         
+        # Устанавливаем статус избранного
         if current_user:
             user_favorites = get_user_favorite_tokens(current_user['id'])
             result.is_favorite = token_id in user_favorites
         
-        related_people_ids = result.additional_info.related_people if result.additional_info else []
-        people_data = await _get_people_data_for_token(related_people_ids)
-        
-        result.related_people_data = people_data
+        # Получаем все связанные данные
+        if result.additional_info:
+            # Люди
+            related_people_ids = result.additional_info.related_people if result.additional_info.related_people else []
+            people_data = await _get_people_data_for_token(related_people_ids)
+            result.related_people_data = people_data
+            
+            # Кошельки - проверяем существование поля
+            related_wallet_ids = []
+            if hasattr(result.additional_info, 'related_wallets') and result.additional_info.related_wallets:
+                related_wallet_ids = result.additional_info.related_wallets
+            wallets_data = await _get_wallets_data_for_token(related_wallet_ids)
+            result.related_wallets_data = wallets_data
+            
+            # Проводники - проверяем существование поля
+            related_conductor_ids = []
+            if hasattr(result.additional_info, 'related_conductors') and result.additional_info.related_conductors:
+                related_conductor_ids = result.additional_info.related_conductors
+            conductors_data = await _get_conductors_data_for_token(related_conductor_ids)
+            result.related_conductors_data = conductors_data
+            
+            # Аудиты безопасности
+            security_audit_ids = result.additional_info.security_audits if result.additional_info.security_audits else []
+            audits_data = await _get_security_audits_data_for_token(security_audit_ids)
+            result.related_security_audits_data = audits_data
+        else:
+            # Если additional_info отсутствует, устанавливаем пустые массивы
+            result.related_people_data = []
+            result.related_wallets_data = []
+            result.related_conductors_data = []
+            result.related_security_audits_data = []
         
         return result
         
@@ -236,7 +266,7 @@ async def get_token_detail(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка получения информации о токене"
         )
-
+    
 @router.get("/{token_id}/chart", response_model=TokenChartResponse)
 async def get_token_chart(
     token_id: str,
@@ -293,3 +323,104 @@ def _resolve_coingecko_id(token_id: str) -> str:
                     coingecko_id = unique_stats[0].get('coingecko_id', token_id.lower())
     
     return coingecko_id
+
+
+
+async def _get_people_data_for_token(related_people_ids: List[str]) -> List[RelatedPerson]:
+
+    if not related_people_ids:
+        return []
+    
+    try:
+        people_repo = get_generic_repository("LiberandumApiPeople")
+        people_data = []
+        
+        for person_id in related_people_ids:
+            person = people_repo.get_by_id(person_id)
+            if person and not person.get('is_deleted', False):
+                people_data.append(RelatedPerson(
+                    id=person['id'],
+                    full_name=person.get('full_name', ''),
+                    avatar_image=person.get('avatar_image'),
+                    description=person.get('description'),
+                    position=person.get('position'),
+                    related_link=person.get('related_link')
+                ))
+        
+        return people_data
+    except Exception as e:
+        print(f"[ERROR] Failed to get people data: {e}")
+        return []
+
+async def _get_wallets_data_for_token(related_wallet_ids: List[str]) -> List[RelatedWallet]:
+
+    if not related_wallet_ids:
+        return []
+    
+    try:
+        wallets_repo = get_generic_repository("LiberandumApiWallets")
+        wallets_data = []
+        
+        for wallet_id in related_wallet_ids:
+            wallet = wallets_repo.get_by_id(wallet_id)
+            if wallet and not wallet.get('is_deleted', False):
+                wallets_data.append(RelatedWallet(
+                    id=wallet['id'],
+                    title=wallet.get('title', ''),
+                    image=wallet.get('image'),
+                    url=wallet.get('url')
+                ))
+        
+        return wallets_data
+    except Exception as e:
+        print(f"[ERROR] Failed to get wallets data: {e}")
+        return []
+
+async def _get_conductors_data_for_token(related_conductor_ids: List[str]) -> List[RelatedConductor]:
+
+    if not related_conductor_ids:
+        return []
+    
+    try:
+        conductors_repo = get_generic_repository("LiberandumApiConductors")
+        conductors_data = []
+        
+        for conductor_id in related_conductor_ids:
+            conductor = conductors_repo.get_by_id(conductor_id)
+            if conductor and not conductor.get('is_deleted', False):
+                conductors_data.append(RelatedConductor(
+                    id=conductor['id'],
+                    title=conductor.get('title', ''),
+                    image=conductor.get('image'),
+                    url=conductor.get('url')
+                ))
+        
+        return conductors_data
+    except Exception as e:
+        print(f"[ERROR] Failed to get conductors data: {e}")
+        return []
+
+async def _get_security_audits_data_for_token(security_audit_ids: List[str]) -> List[RelatedSecurityAudit]:
+
+    if not security_audit_ids:
+        return []
+    
+    try:
+        audits_repo = get_generic_repository("LiberandumApiSecurityAudit")
+        audits_data = []
+        
+        for audit_id in security_audit_ids:
+            audit = audits_repo.get_by_id(audit_id)
+            if audit and not audit.get('is_deleted', False):
+                audits_data.append(RelatedSecurityAudit(
+                    id=audit['id'],
+                    title=audit.get('title', ''),
+                    auditor_name=audit.get('auditor_name', ''),
+                    link=audit.get('link', ''),
+                    audit_score=audit.get('audit_score', '')
+                ))
+        
+        return audits_data
+    except Exception as e:
+        print(f"[ERROR] Failed to get security audits data: {e}")
+        return []

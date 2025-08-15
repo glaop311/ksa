@@ -1,3 +1,5 @@
+# app/schemas/people_audit.py - ОБНОВЛЕННАЯ ВЕРСИЯ
+
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
@@ -8,6 +10,7 @@ class PersonBase(BaseModel):
     description: Optional[str] = Field(None, description="Описание человека")
     position: Optional[str] = Field(None, description="Должность или позиция")
     related_link: Optional[str] = Field(None, description="Ссылка на профиль или сайт")
+    category: Optional[str] = Field(None, description="Категория человека (founder, developer, advisor, etc.)")
 
 class PersonCreate(PersonBase):
     pass
@@ -18,6 +21,7 @@ class PersonUpdate(BaseModel):
     description: Optional[str] = Field(None, description="Описание человека")
     position: Optional[str] = Field(None, description="Должность или позиция")
     related_link: Optional[str] = Field(None, description="Ссылка на профиль или сайт")
+    category: Optional[str] = Field(None, description="Категория человека (founder, developer, advisor, etc.)")
     is_deleted: Optional[bool] = Field(None, description="Удален ли человек")
 
 class PersonResponse(PersonBase):
@@ -35,12 +39,14 @@ class PersonResponse(PersonBase):
                 "description": "Основатель Ethereum",
                 "position": "Основатель",
                 "related_link": "https://vitalik.ca",
+                "category": "founder",
                 "is_deleted": False,
                 "created_at": "2024-01-21T10:30:00",
                 "updated_at": "2024-01-21T10:30:00"
             }
         }
 
+# Остальные модели без изменений...
 class SecurityAuditBase(BaseModel):
     title: str = Field(..., description="Название аудита", max_length=300)
     auditor_name: str = Field(..., description="Имя аудитора")

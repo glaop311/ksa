@@ -15,8 +15,8 @@ async def create_person(person_data: PersonCreate, current_user = Depends(get_ad
     return PersonResponse(**result["entity"])
 
 @router.get("/", response_model=list[PersonResponse])
-async def list_people( current_user = Depends(get_admin_user)):
-    result = await controller.get_entities_list(current_user)
+async def list_people(current_user = Depends(get_admin_user)):
+    result = await controller.get_entities_list(None, current_user)
     return [PersonResponse(**person) for person in result["persons"]]
 
 @router.get("/search", response_model=list[PersonResponse])

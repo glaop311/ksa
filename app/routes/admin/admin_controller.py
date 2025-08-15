@@ -16,6 +16,28 @@ class BaseAdminController:
     def _get_repository(self):
         return get_generic_repository(self.table_name)
     
+    def _convert_floats_to_decimals(self, data: Dict[str, Any]) -> Dict[str, Any]:
+
+        converted_data = {}
+        
+        for key, value in data.items():
+            if isinstance(value, float):
+                converted_data[key] = Decimal(str(value))
+            elif isinstance(value, list):
+
+                converted_data[key] = [
+                    Decimal(str(item)) if isinstance(item, float) else item 
+                    for item in value
+                ]
+            elif isinstance(value, dict):
+
+                converted_data[key] = self._convert_floats_to_decimals(value)
+            else:
+
+                converted_data[key] = value
+        
+        return converted_data
+    
     def _add_audit_fields(self, data: Dict[str, Any], admin_id: str, action: str) -> Dict[str, Any]:
         timestamp = datetime.now().isoformat()
         
@@ -45,6 +67,8 @@ class BaseAdminController:
         try:
             repo = self._get_repository()
             
+            entity_data = self._convert_floats_to_decimals(entity_data)
+            
             if self.table_name == "LiberandumAggregationTokenStats" and 'approved' not in entity_data:
                 entity_data['approved'] = False
             
@@ -57,6 +81,7 @@ class BaseAdminController:
                 "admin": current_user['email']
             }
         except Exception as e:
+            print(f"[ERROR][BaseAdminController] - Ошибка создания {self.entity_name}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Ошибка создания {self.entity_name.lower()}: {str(e)}"
@@ -84,6 +109,7 @@ class BaseAdminController:
                 "admin": current_user['email']
             }
         except Exception as e:
+            print(f"[ERROR][BaseAdminController] - Ошибка получения списка {self.entity_name}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Ошибка получения списка {self.entity_name.lower()}: {str(e)}"
@@ -115,6 +141,7 @@ class BaseAdminController:
         except HTTPException:
             raise
         except Exception as e:
+            print(f"[ERROR][BaseAdminController] - Ошибка получения {self.entity_name}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Ошибка получения {self.entity_name.lower()}: {str(e)}"
@@ -131,10 +158,24 @@ class BaseAdminController:
                     detail=f"{self.entity_name} не найден"
                 )
             
+            updates = self._convert_floats_to_decimals(updates)
+            
             if self.table_name == "LiberandumAggregationToken" and 'description_en' in updates:
                 updates['description'] = updates['description_en']
             
             updates = self._add_audit_fields(updates, current_user['id'], "update")
+            
+            print(f"[DEBUG][BaseAdminController] - Обновление {self.entity_name}:")
+            print(f"   Entity ID: {entity_id}")
+            print(f"   Updates (после конвертации): {list(updates.keys())}")
+            for key, value in updates.items():
+                if isinstance(value, Decimal):
+                    print(f"   {key}: {value} (Decimal)")
+                elif isinstance(value, float):
+                    print(f"   {key}: {value} (float - ОШИБКА!)")
+                else:
+                    print(f"   {key}: {type(value).__name__}")
+            
             updated_entity = repo.update_by_id(entity_id, updates)
             
             if self.table_name == "LiberandumAggregationToken" and updated_entity:
@@ -153,6 +194,10 @@ class BaseAdminController:
         except HTTPException:
             raise
         except Exception as e:
+            print(f"[ERROR][BaseAdminController] - Ошибка обновления {self.entity_name}: {e}")
+            print(f"[ERROR][BaseAdminController] - Updates: {updates}")
+            import traceback
+            traceback.print_exc()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Ошибка обновления {self.entity_name.lower()}: {str(e)}"
@@ -180,6 +225,7 @@ class BaseAdminController:
         except HTTPException:
             raise
         except Exception as e:
+            print(f"[ERROR][BaseAdminController] - Ошибка удаления {self.entity_name}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f"Ошибка удаления {self.entity_name.lower()}: {str(e)}"

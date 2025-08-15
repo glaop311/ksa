@@ -9,20 +9,7 @@ router = APIRouter()
 
 @router.get("/global", response_model=GlobalMarketResponse)
 async def get_global_market_data():
-    """
-    Получить глобальные данные криптовалютного рынка
-    
-    **Источник данных:** CoinMarketCap API
-    **Кэширование:** 1 час
-    
-    **Возвращаемые данные:**
-    - Общая рыночная капитализация
-    - Доминирование Bitcoin и Ethereum
-    - Индекс страха и жадности (Fear & Greed)
-    - Индекс альтсезона (0-100)
-    - Объем торгов за 24 часа
-    - Количество активных криптовалют и бирж
-    """
+
     try:
         result = await coinmarketcap_global_service.get_global_market_data()
         
@@ -45,15 +32,7 @@ async def get_global_market_data():
 
 @router.get("/global/cache-info")
 async def get_cache_info():
-    """
-    Получить информацию о состоянии кэша глобальных данных
-    
-    **Для отладки и мониторинга:**
-    - Статус кэша (валиден/истек/отсутствует)
-    - Время создания и истечения
-    - Источник данных
-    - Использованные API кредиты
-    """
+
     try:
         cache_info = await coinmarketcap_global_service.get_cache_info()
         return {

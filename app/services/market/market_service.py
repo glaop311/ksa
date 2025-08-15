@@ -591,142 +591,142 @@ class MarketDataService:
             return token.get('description_uz') or token.get('description', '')
         else:
             return token.get('description', '')
-
     def get_token_detail(self, token_id: str, language: str = "en") -> Optional[TokenDetailResponse]:
-        try:
-            token_stats_repo = self._get_repository(self.token_stats_table)
-            tokens_repo = self._get_repository(self.tokens_table)
-            
-            token_stats_results = token_stats_repo.find_by_field('coingecko_id', token_id)
-            if not token_stats_results:
-                token_stats_results = token_stats_repo.find_by_field('symbol', token_id.upper())
-            
-            if not token_stats_results:
-                return None
-            
-            approved_stats = self._filter_approved_tokens(token_stats_results)
-            unique_stats = self._remove_duplicates_by_symbol(approved_stats)
-            if not unique_stats:
-                return None
-            
-            token_stats = unique_stats[0]
-            
-            token = None
-            if token_stats.get('symbol'):
-                token_results = tokens_repo.find_by_field('symbol', token_stats['symbol'])
-                if token_results:
-                    for t in token_results:
-                        if not t.get('is_deleted', False):
-                            token = t
-                            break
-                        
-            if not token and token_stats.get('coingecko_id'):
-                token_results = tokens_repo.find_by_field('coingecko_id', token_stats['coingecko_id'])
-                if token_results:
-                    for t in token_results:
-                        if not t.get('is_deleted', False):
-                            token = t
-                            break
-                        
-            def safe_float(value, default=0.0):
-                try:
-                    return float(value or 0)
-                except:
-                    return default
-            
-            def safe_int(value, default=0):
-                try:
-                    return int(float(value or 0))
-                except:
-                    return default
-            
-            def safe_str(value, default=""):
-                try:
-                    return str(value or default)
-                except:
-                    return default
-            
-            def safe_list(value, default=None):
-                if default is None:
-                    default = []
-                try:
-                    if isinstance(value, list):
-                        return [str(item) for item in value]
-                    return default
-                except:
-                    return default
-            
-            social_links = TokenSocialLinks(
-                website=safe_str(token.get('website') if token else None),
-                twitter=safe_str(token.get('twitter') if token else None),
-                facebook=safe_str(token.get('facebook') if token else None),
-                reddit=safe_str(token.get('reddit') if token else None),
-                instagram=safe_str(token.get('instagram') if token else None),
-                discord=safe_str(token.get('discord') if token else None),
-                medium=safe_str(token.get('medium') if token else None),
-                youtube=safe_str(token.get('youtube') if token else None),
-                repo_link=safe_str(token.get('repo_link') if token else None),
-                whitelabel_link=safe_str(token.get('whitelabel_link') if token else None)
-            )
-            
-            localized_description = ""
-            if token:
-                localized_description = self._get_localized_description(token, language)
-            
-            additional_info = TokenAdditionalInfo(
-                description=localized_description,
-                exchanges=safe_list(token.get('exchanges') if token else []),
-                security_audits=safe_list(token.get('security_audits') if token else []),
-                related_people=safe_list(token.get('related_people') if token else []),
-                coingecko_id=safe_str(token.get('coingecko_id') if token else token_stats.get('coingecko_id')),
-                created_at=safe_str(token.get('created_at') if token else None),
-                updated_at=safe_str(token.get('updated_at') if token else None),
-                tvl=safe_float(token.get('tvl') if token else None),
-                import_source=safe_str(token.get('import_source') if token else None)
-            )
-            
-            return TokenDetailResponse(
-                id=token_stats.get('coingecko_id', ''),
-                symbol=token_stats.get('symbol', '').upper(),
-                name=token_stats.get('coin_name', ''),
-                image=token.get('avatar_image', '') if token else '',
-                current_price=safe_float(token_stats.get('price')),
-                price_change_percentage_24h=safe_float(token_stats.get('volume_24h_change_24h')),
-                halal_status=HalalStatus(
-                    is_halal=token_stats.get('is_halal', None),
-                    verified=token_stats.get('halal_verified', None),
-                    halal_score=token_stats.get('halal_score', None)
-                ),
-                market_data=MarketData(
-                    market_cap_usd=safe_int(token_stats.get('market_cap')),
-                    fully_diluted_valuation_usd=safe_int(token_stats.get('fully_diluted_valuation')),
-                    total_volume_usd=safe_int(token_stats.get('trading_volume_24h')),
-                    circulating_supply_value=safe_int(token_stats.get('circulating_supply')),
-                    max_supply_value=safe_int(token_stats.get('token_max_supply')),
-                    total_supply_value=safe_int(token_stats.get('token_total_supply'))
-                ),
-                statistics=Statistics(
-                    all_time_high=AllTimeHigh(
-                        price=safe_float(token_stats.get('ath')),
-                        date=token_stats.get('ath_date', '')
+            try:
+                token_stats_repo = self._get_repository(self.token_stats_table)
+                tokens_repo = self._get_repository(self.tokens_table)
+                
+                token_stats_results = token_stats_repo.find_by_field('coingecko_id', token_id)
+                if not token_stats_results:
+                    token_stats_results = token_stats_repo.find_by_field('symbol', token_id.upper())
+                
+                if not token_stats_results:
+                    return None
+                
+                approved_stats = self._filter_approved_tokens(token_stats_results)
+                unique_stats = self._remove_duplicates_by_symbol(approved_stats)
+                if not unique_stats:
+                    return None
+                
+                token_stats = unique_stats[0]
+                
+                token = None
+                if token_stats.get('symbol'):
+                    token_results = tokens_repo.find_by_field('symbol', token_stats['symbol'])
+                    if token_results:
+                        for t in token_results:
+                            if not t.get('is_deleted', False):
+                                token = t
+                                break
+                            
+                if not token and token_stats.get('coingecko_id'):
+                    token_results = tokens_repo.find_by_field('coingecko_id', token_stats['coingecko_id'])
+                    if token_results:
+                        for t in token_results:
+                            if not t.get('is_deleted', False):
+                                token = t
+                                break
+                            
+                def safe_float(value, default=0.0):
+                    try:
+                        return float(value or 0)
+                    except:
+                        return default
+                
+                def safe_int(value, default=0):
+                    try:
+                        return int(float(value or 0))
+                    except:
+                        return default
+                
+                def safe_str(value, default=""):
+                    try:
+                        return str(value or default)
+                    except:
+                        return default
+                
+                def safe_list(value, default=None):
+                    if default is None:
+                        default = []
+                    try:
+                        if isinstance(value, list):
+                            return [str(item) for item in value]
+                        return default
+                    except:
+                        return default
+                
+                social_links = TokenSocialLinks(
+                    website=safe_str(token.get('website') if token else None),
+                    twitter=safe_str(token.get('twitter') if token else None),
+                    facebook=safe_str(token.get('facebook') if token else None),
+                    reddit=safe_str(token.get('reddit') if token else None),
+                    instagram=safe_str(token.get('instagram') if token else None),
+                    discord=safe_str(token.get('discord') if token else None),
+                    medium=safe_str(token.get('medium') if token else None),
+                    youtube=safe_str(token.get('youtube') if token else None),
+                    repo_link=safe_str(token.get('repo_link') if token else None),
+                    whitelabel_link=safe_str(token.get('whitelabel_link') if token else None)
+                )
+                
+                localized_description = ""
+                if token:
+                    localized_description = self._get_localized_description(token, language)
+                
+                additional_info = TokenAdditionalInfo(
+                    description=localized_description,
+                    exchanges=safe_list(token.get('exchanges') if token else []),
+                    security_audits=safe_list(token.get('security_audits') if token else []),
+                    related_people=safe_list(token.get('related_people') if token else []),
+                    related_wallets=safe_list(token.get('related_wallets_data') if token else []),
+                    related_conductors=safe_list(token.get('related_conductors_data') if token else []),
+                    coingecko_id=safe_str(token.get('coingecko_id') if token else token_stats.get('coingecko_id')),
+                    created_at=safe_str(token.get('created_at') if token else None),
+                    updated_at=safe_str(token.get('updated_at') if token else None),
+                    tvl=safe_float(token.get('tvl') if token else None),
+                    import_source=safe_str(token.get('import_source') if token else None)
+                )
+                
+                return TokenDetailResponse(
+                    id=token_stats.get('coingecko_id', ''),
+                    symbol=token_stats.get('symbol', '').upper(),
+                    name=token_stats.get('coin_name', ''),
+                    image=token.get('avatar_image', '') if token else '',
+                    current_price=safe_float(token_stats.get('price')),
+                    price_change_percentage_24h=safe_float(token_stats.get('volume_24h_change_24h')),
+                    halal_status=HalalStatus(
+                        is_halal=token_stats.get('is_halal', None),
+                        verified=token_stats.get('halal_verified', None),
+                        halal_score=token_stats.get('halal_score', None)
                     ),
-                    all_time_low=AllTimeLow(
-                        price=safe_float(token_stats.get('atl')),
-                        date=token_stats.get('atl_date', '')
+                    market_data=MarketData(
+                        market_cap_usd=safe_int(token_stats.get('market_cap')),
+                        fully_diluted_valuation_usd=safe_int(token_stats.get('fully_diluted_valuation')),
+                        total_volume_usd=safe_int(token_stats.get('trading_volume_24h')),
+                        circulating_supply_value=safe_int(token_stats.get('circulating_supply')),
+                        max_supply_value=safe_int(token_stats.get('token_max_supply')),
+                        total_supply_value=safe_int(token_stats.get('token_total_supply'))
                     ),
-                    price_indicators_24h=PriceIndicators24h(
-                        min=safe_float(token_stats.get('low_24h')),
-                        max=safe_float(token_stats.get('high_24h'))
-                    )
-                ),
-                social_links=social_links,
-                additional_info=additional_info
-            )
-            
-        except Exception as e:
-            print(f"[ERROR][MarketService] - Ошибка получения токена {token_id}: {e}")
-            return None
-        
+                    statistics=Statistics(
+                        all_time_high=AllTimeHigh(
+                            price=safe_float(token_stats.get('ath')),
+                            date=token_stats.get('ath_date', '')
+                        ),
+                        all_time_low=AllTimeLow(
+                            price=safe_float(token_stats.get('atl')),
+                            date=token_stats.get('atl_date', '')
+                        ),
+                        price_indicators_24h=PriceIndicators24h(
+                            min=safe_float(token_stats.get('low_24h')),
+                            max=safe_float(token_stats.get('high_24h'))
+                        )
+                    ),
+                    social_links=social_links,
+                    additional_info=additional_info
+                )
+                
+            except Exception as e:
+                print(f"[ERROR][MarketService] - Ошибка получения токена {token_id}: {e}")
+                return None        
     def get_exchanges_list(self) -> ExchangeListResponse:
         try:
             exchange_stats_repo = self._get_repository(self.exchange_stats_table)

@@ -202,14 +202,13 @@ async def get_token_full_stats(token_id: str):
             detail="Ошибка получения статистики токена"
         )
 
-
 @router.get("/{token_id}", response_model=TokenDetailResponse)
 async def get_token_detail(
     token_id: str,
     lang: Language = Query(default=Language.en, description="Язык отображения"),
     current_user = Depends(get_current_user_optional)
 ):
-    """Получить детальную информацию о токене с обновленными связанными данными"""
+
     try:
         result = market_service.get_token_detail(token_id, lang.value)
         
@@ -219,38 +218,41 @@ async def get_token_detail(
                 detail="Токен не найден"
             )
         
-        # Устанавливаем статус избранного
+
         if current_user:
             user_favorites = get_user_favorite_tokens(current_user['id'])
             result.is_favorite = token_id in user_favorites
         
-        # Получаем все связанные данные
+
         if result.additional_info:
-            # Люди
+
             related_people_ids = result.additional_info.related_people if result.additional_info.related_people else []
             people_data = await _get_people_data_for_token(related_people_ids)
             result.related_people_data = people_data
             
-            # Кошельки - проверяем существование поля
+
             related_wallet_ids = []
             if hasattr(result.additional_info, 'related_wallets') and result.additional_info.related_wallets:
                 related_wallet_ids = result.additional_info.related_wallets
+            elif result.additional_info and 'related_wallets_data' in result.additional_info.__dict__:
+                related_wallet_ids = result.additional_info.related_wallets_data or []
             wallets_data = await _get_wallets_data_for_token(related_wallet_ids)
             result.related_wallets_data = wallets_data
             
-            # Проводники - проверяем существование поля
+
             related_conductor_ids = []
             if hasattr(result.additional_info, 'related_conductors') and result.additional_info.related_conductors:
                 related_conductor_ids = result.additional_info.related_conductors
+            elif result.additional_info and 'related_conductors_data' in result.additional_info.__dict__:
+                related_conductor_ids = result.additional_info.related_conductors_data or []
             conductors_data = await _get_conductors_data_for_token(related_conductor_ids)
             result.related_conductors_data = conductors_data
             
-            # Аудиты безопасности
             security_audit_ids = result.additional_info.security_audits if result.additional_info.security_audits else []
             audits_data = await _get_security_audits_data_for_token(security_audit_ids)
             result.related_security_audits_data = audits_data
         else:
-            # Если additional_info отсутствует, устанавливаем пустые массивы
+
             result.related_people_data = []
             result.related_wallets_data = []
             result.related_conductors_data = []
@@ -267,6 +269,7 @@ async def get_token_detail(
             detail="Ошибка получения информации о токене"
         )
     
+
 @router.get("/{token_id}/chart", response_model=TokenChartResponse)
 async def get_token_chart(
     token_id: str,

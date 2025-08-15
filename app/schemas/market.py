@@ -98,9 +98,7 @@ class RelatedWallet(BaseModel):
     image: Optional[str] = Field(None, description="Изображение кошелька")
     url: Optional[str] = Field(None, description="URL кошелька")
     description: Optional[str] = Field(None, description="Описание кошелька")
-    category: Optional[str] = Field(None, description="Категория кошелька")
-    supported_currencies: List[str] = Field(default_factory=list, description="Поддерживаемые валюты")
-    features: List[str] = Field(default_factory=list, description="Особенности кошелька")
+
 
 class RelatedConductor(BaseModel):
     id: str = Field(..., description="Уникальный идентификатор проводника")
@@ -108,10 +106,6 @@ class RelatedConductor(BaseModel):
     image: Optional[str] = Field(None, description="Изображение проводника")
     url: Optional[str] = Field(None, description="URL проводника")
     description: Optional[str] = Field(None, description="Описание проводника")
-    category: Optional[str] = Field(None, description="Категория проводника")
-    supported_currencies: List[str] = Field(default_factory=list, description="Поддерживаемые валюты")
-    features: List[str] = Field(default_factory=list, description="Особенности проводника")
-    fees: Optional[str] = Field(None, description="Информация о комиссиях")
 
 class RelatedSecurityAudit(BaseModel):
     id: str = Field(..., description="Уникальный идентификатор аудита")

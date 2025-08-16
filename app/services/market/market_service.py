@@ -515,20 +515,20 @@ class MarketDataService:
         except Exception as e:
             print(f"[ERROR][MarketService] - Ошибка получения полной статистики токена {symbol_or_id}: {e}")
             return None
-    
+        
     def _convert_token_stats_to_response(self, token_stats: Dict[str, Any], token_data: Dict[str, Any] = None) -> TokenResponse:
         def safe_float(value, default=0.0):
             try:
                 return float(str(value or 0).replace(',', ''))
             except:
                 return default
-        
+
         def safe_int(value, default=0):
             try:
                 return int(float(str(value or 0).replace(',', '')))
             except:
                 return default
-        
+
         def safe_bool(value, default=None):
             if value is None:
                 return default
@@ -537,14 +537,14 @@ class MarketDataService:
             if isinstance(value, str):
                 return value.lower() in ('true', '1', 'yes')
             return bool(value)
-        
+
         def get_token_category(token_stat, token):
             if token and token.get('token_category'):
                 return token['token_category']
-            
+
             symbol = str(token_stat.get('symbol', '')).upper()
             name = str(token_stat.get('coin_name', '')).lower()
-            
+
             if symbol in ['USDT', 'USDC', 'DAI', 'BUSD', 'FRAX', 'TUSD', 'FDUSD']:
                 return "stablecoin"
             elif symbol in ['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'AVAX', 'MATIC', 'DOT', 'ATOM', 'NEAR', 'FTM']:
@@ -557,13 +557,18 @@ class MarketDataService:
                 return "meme"
             else:
                 return "other"
-        
-        sparkline_data = token_stats.get('sparkline_7d', [])
-        if not isinstance(sparkline_data, list):
-            sparkline_data = []
-        
+
+        price_history_data = token_stats.get('price_history', [])
+        if not isinstance(price_history_data, list):
+            price_history_data = []
+
+        try:
+            price_history_floats = [safe_float(price) for price in price_history_data if price is not None]
+        except:
+            price_history_floats = []
+
         token_category = get_token_category(token_stats, token_data)
-        
+
         return TokenResponse(
             id=str(token_stats.get('coingecko_id', token_stats.get('symbol', 'unknown'))).lower(),
             symbol=str(token_stats.get('symbol', 'UNKNOWN')).upper(),
@@ -573,7 +578,7 @@ class MarketDataService:
             market_cap=safe_int(token_stats.get('market_cap')),
             price_change_percentage_24h=safe_float(token_stats.get('volume_24h_change_24h')),
             price_change_percentage_7d=safe_float(token_stats.get('price_change_percentage_7d')),
-            sparkline_in_7d=TokenSparkline(price=sparkline_data),
+            sparkline_in_7d=TokenSparkline(price=price_history_floats),
             is_halal=safe_bool(token_stats.get('is_halal') or (token_data.get('is_halal') if token_data else None)),
             is_layer_one=token_category == "layer1",
             is_stablecoin=token_category == "stablecoin",
@@ -583,7 +588,6 @@ class MarketDataService:
             total_supply=safe_float(token_stats.get('token_total_supply')),
             max_supply=safe_float(token_stats.get('token_max_supply'))
         )
-
     def _get_localized_description(self, token: Dict[str, Any], language: str) -> str:
         if language == "ru":
             return token.get('description_ru') or token.get('description', '')
